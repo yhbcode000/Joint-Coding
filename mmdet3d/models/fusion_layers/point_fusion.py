@@ -9,6 +9,7 @@ from mmdet3d.core.bbox.structures import (get_proj_mat_by_coord_type,
                                           points_cam2img)
 from ..builder import FUSION_LAYERS
 from . import apply_3d_transformation
+from .. import builder
 
 
 def point_sample(img_meta,
@@ -144,7 +145,8 @@ class PointFusion(BaseModule):
                  aligned=True,
                  align_corners=True,
                  padding_mode='zeros',
-                 lateral_conv=True):
+                 lateral_conv=True,
+                 subfusion=None):
         super(PointFusion, self).__init__(init_cfg=init_cfg)
         if isinstance(img_levels, int):
             img_levels = [img_levels]
@@ -164,6 +166,7 @@ class PointFusion(BaseModule):
         self.aligned = aligned
         self.align_corners = align_corners
         self.padding_mode = padding_mode
+        self.subfusion = subfusion
 
         self.lateral_convs = None
         if lateral_conv:
@@ -201,6 +204,11 @@ class PointFusion(BaseModule):
                 nn.BatchNorm1d(out_channels, eps=1e-3, momentum=0.01),
                 nn.ReLU(inplace=False))
 
+        if self.subfusion:
+            self.subfusion = builder.build_fusion_layer(subfusion)
+
+        # self.subfusions = [builder.build_fusion_layer(subfusion) for _ in range(10)] # TODO a demo for multi similar modules
+
         if init_cfg is None:
             self.init_cfg = [
                 dict(type='Xavier', layer='Conv2d', distribution='uniform'),
@@ -227,6 +235,8 @@ class PointFusion(BaseModule):
         pts_pre_fuse = self.pts_transform(pts_feats)
 
         fuse_out = img_pre_fuse + pts_pre_fuse
+        # fuse_out = self.subfusion(img_pre_fuse, pts_pre_fuse) # TODO pending for update the subfusion concate
+        
         if self.activate_out:
             fuse_out = F.relu(fuse_out)
         if self.fuse_out:
