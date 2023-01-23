@@ -1,6 +1,6 @@
 # This schedule is mainly used by models with dynamic voxelization
 # optimizer
-lr = 0.003  # max learning rate
+lr = 0.00003  # max learning rate
 optimizer = dict(
     type='AdamW',
     lr=lr,
@@ -17,4 +17,4 @@ lr_config = dict(
 
 momentum_config = None
 
-runner = dict(type='EpochBasedRunner', max_epochs=40)
+runner = dict(type='EpochBasedRunner', max_epochs=85)
