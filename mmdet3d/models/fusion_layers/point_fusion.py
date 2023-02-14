@@ -146,7 +146,13 @@ class PointFusion(BaseModule):
                  align_corners=True,
                  padding_mode='zeros',
                  lateral_conv=True,
-                 subfusion=None):
+                 subfusion1=None,
+                 subfusion2=None,
+                 subfusion3=None,
+                 subfusion4=None,
+                 subfusion5=None,
+                 subfusion6=None
+                 ):
         super(PointFusion, self).__init__(init_cfg=init_cfg)
         if isinstance(img_levels, int):
             img_levels = [img_levels]
@@ -166,7 +172,87 @@ class PointFusion(BaseModule):
         self.aligned = aligned
         self.align_corners = align_corners
         self.padding_mode = padding_mode
-        self.subfusion = subfusion
+        self.subfusion1 = subfusion1
+        self.subfusion2 = subfusion2
+        self.subfusion3 = subfusion3
+        self.subfusion4 = subfusion4
+        self.subfusion5 = subfusion5
+        self.subfusion6 = subfusion6
+        # self.conv1 = nn.Sequential(
+        #         nn.Conv2d(256, 128, 3),
+        #         nn.ReLU(),
+        #         nn.MaxPool2d(2, 2)
+        # ) 
+        # self.conv2 = nn.Sequential(
+        #         nn.Conv2d(256, 128, 3),
+        #         nn.ReLU(),
+        #         nn.MaxPool2d(2, 2)
+        # ) 
+        # self.conv3 = nn.Sequential(
+        #         nn.Conv2d(256, 128, 3),
+        #         nn.ReLU(),
+        #         nn.MaxPool2d(2, 2)
+        # ) 
+        # self.conv4 = nn.Sequential(
+        #         nn.Conv2d(256, 128, 3),
+        #         nn.ReLU(),
+        #         nn.MaxPool2d(2, 2)
+        # ) 
+        # self.conv5 = nn.Sequential(
+        #         nn.Conv2d(256, 128, 3),
+        #         nn.ReLU(),
+        #         nn.MaxPool2d(2, 2)
+        # ) 
+        # self.conv6 = nn.Sequential(
+        #         nn.Conv2d(256, 128, 3),
+        #         nn.ReLU(),
+        #         nn.MaxPool2d(2, 2)
+        # ) 
+        
+        self.conv1 = nn.Sequential(
+                nn.Conv1d(in_channels=256,out_channels=128,kernel_size=2),
+                nn.ReLU(),
+                nn.MaxPool1d(2, 2)
+        )  
+        self.conv2 = nn.Sequential(
+                nn.Conv1d(in_channels=256,out_channels=128,kernel_size=2),
+                nn.ReLU(),
+                nn.MaxPool1d(2, 2)
+        )
+        self.conv3 = nn.Sequential(
+                nn.Conv1d(in_channels=256,out_channels=128,kernel_size=2),
+                nn.ReLU(),
+                nn.MaxPool1d(2, 2)
+        )
+        self.conv4 = nn.Sequential(
+                nn.Conv1d(in_channels=256,out_channels=128,kernel_size=2),
+                nn.ReLU(),
+                nn.MaxPool1d(2, 2)
+        )
+        self.conv5 = nn.Sequential(
+                nn.Conv1d(in_channels=256,out_channels=128,kernel_size=2),
+                nn.ReLU(),
+                nn.MaxPool1d(2, 2)
+        )
+        self.conv6 = nn.Sequential(
+                nn.Conv1d(in_channels=256,out_channels=128,kernel_size=2),
+                nn.ReLU(),
+                nn.MaxPool1d(2, 2)
+        )    
+                
+        self.fc1=nn.Linear(256,128)
+        self.fc2=nn.Linear(256,128)
+        self.fc3=nn.Linear(256,128)
+        
+        
+        self.fc_1=nn.Linear(256,128)
+        self.fc_2=nn.Linear(256,128)
+        self.fc_3=nn.Linear(256,128)
+        self.fc_4=nn.Linear(256,128)
+        self.fc_5=nn.Linear(256,128)
+        self.fc_6=nn.Linear(256,128)
+
+    
 
         self.lateral_convs = None
         if lateral_conv:
@@ -204,11 +290,24 @@ class PointFusion(BaseModule):
                 nn.BatchNorm1d(out_channels, eps=1e-3, momentum=0.01),
                 nn.ReLU(inplace=False))
 
-        if self.subfusion:
-            self.subfusion = builder.build_fusion_layer(subfusion)
+            
+
+        if self.subfusion1:
+            self.subfusion1 = builder.build_fusion_layer(subfusion1)
+        if self.subfusion2:
+            self.subfusion2 = builder.build_fusion_layer(subfusion2)
+        if self.subfusion3:
+            self.subfusion3 = builder.build_fusion_layer(subfusion3)
+        if self.subfusion4:
+            self.subfusion4 = builder.build_fusion_layer(subfusion4)
+        if self.subfusion5:
+            self.subfusion5 = builder.build_fusion_layer(subfusion5)
+        if self.subfusion6:
+            self.subfusion6 = builder.build_fusion_layer(subfusion6)
+            # self.subfusions = [builder.build_fusion_layer(subfusions) for _ in range(6)]
 
         # self.subfusions = [builder.build_fusion_layer(subfusion) for _ in range(10)] # TODO a demo for multi similar modules
-
+           
         if init_cfg is None:
             self.init_cfg = [
                 dict(type='Xavier', layer='Conv2d', distribution='uniform'),
@@ -233,16 +332,97 @@ class PointFusion(BaseModule):
         if self.training and self.dropout_ratio > 0:
             img_pre_fuse = F.dropout(img_pre_fuse, self.dropout_ratio)
         pts_pre_fuse = self.pts_transform(pts_feats)
+        
+    
 
-        fuse_out = img_pre_fuse + pts_pre_fuse
+        
+        img_pre=self.subfusion1(img_pre_fuse, pts_pre_fuse)
+        pts_pre=self.subfusion2(pts_pre_fuse,img_pre_fuse)
+        fuse_m=torch.cat((pts_pre,img_pre),-1)
+        fuse_m=self.fc1(fuse_m)
+        fuse_pts=torch.cat((pts_pre,fuse_m),-1)
+        fuse_pts=self.fc_1(fuse_pts)
+        fuse_img=torch.cat((img_pre,fuse_m),-1)
+        fuse_img=self.fc_2(fuse_img)
+        # first 
+        
+        # img_pre=self.subfusion3(fuse_img, fuse_pts)
+        # pts_pre=self.subfusion4(fuse_pts,fuse_img)
+        # fuse_m=torch.cat((pts_pre,img_pre),-1)
+        # fuse_m=self.fc2(fuse_m)
+        # fuse_pts=torch.cat((pts_pre,fuse_m),-1)
+        # fuse_img=torch.cat((img_pre,fuse_m),-1)
+        # fuse_pts=self.fc_3(fuse_pts)
+        # fuse_img=self.fc_4(fuse_img)
+        # second
+        
+        # img_pre=self.subfusion5(fuse_img, fuse_pts)
+        # pts_pre=self.subfusion6(fuse_pts,fuse_img)
+        # fuse_m=torch.cat((pts_pre,img_pre),-1)
+        # fuse_m=self.fc3(fuse_m)
+        # fuse_pts=torch.cat((pts_pre,fuse_m),-1)
+        # fuse_img=torch.cat((img_pre,fuse_m),-1)
+        # fuse_pts=self.fc_5(fuse_pts)
+        # fuse_img=self.fc_6(fuse_img)
+        
+        
+        
+        
+        
+        # # first
+        # img_pre=self.subfusion3(img_pre_fuse, pts_pre_fuse)
+        # pts_pre=self.subfusion4(pts_pre_fuse,img_pre_fuse)
+        # fuse_m=torch.cat((pts_pre,img_pre),-1)
+        # fuse_m=self.fc2(fuse_m)
+        # fuse_pts=torch.cat((pts_pre,fuse_m),-1)
+        # size2=fuse_pts.shape
+        # fuse_pts=fuse_pts.resize(1,size2[0],size2[1])        
+        # fuse_pts = fuse_pts.permute(0,2,1)
+        # fuse_pts=self.conv3(fuse_pts)
+        # fuse_pts=fuse_pts.resize(size1[0],size1[1])
+        # fuse_pts = fuse_pts.permute(0,2,1)
+        # fuse_img=torch.cat((img_pre,fuse_m),-1)
+        # fuse_img= fuse_img.resize(1,size2[0],size2[1])        
+        # fuse_img =fuse_img.permute(0,2,1)
+        # fuse_img=self.conv4(fuse_img)
+        # fuse_img= fuse_img.resize(size1[0],size1[1])
+        # # second
+
+        
+        # img_pre=self.subfusion5(img_pre_fuse, pts_pre_fuse)
+        # pts_pre=self.subfusion6(pts_pre_fuse,img_pre_fuse)
+        # fuse_m=torch.cat((pts_pre,img_pre),-1)
+        # fuse_m=self.fc3(fuse_m)
+        # fuse_pts=torch.cat((pts_pre,fuse_m),-1)
+        # size3=fuse_pts.shape
+        # fuse_pts=fuse_pts.resize(1,size3[0],size3[1])        
+        # fuse_pts = fuse_pts.permute(0,2,1)
+        # fuse_pts=self.conv5(fuse_pts)
+        # fuse_pts=fuse_pts.resize(size3[0],size3[1])   
+        # fuse_pts = fuse_pts.permute(0,2,1)
+        # fuse_img=torch.cat((img_pre,fuse_m),-1)
+        # fuse_img= fuse_img.resize(1,size3[0],size3[1])        
+        # fuse_img =fuse_img.permute(0,2,1)
+        # fuse_img=self.conv6(fuse_img)
+        # fuse_img= fuse_img.resize(size1[0],size1[1])
+        # third
+
+        fuse_out = fuse_img+fuse_pts
+        fuse_out =fuse_out
+        
+        
+
         # fuse_out = self.subfusion(img_pre_fuse, pts_pre_fuse) # TODO pending for update the subfusion concate
         
         if self.activate_out:
             fuse_out = F.relu(fuse_out)
         if self.fuse_out:
             fuse_out = self.fuse_conv(fuse_out)
+        
+        
 
         return fuse_out
+        
 
     def obtain_mlvl_feats(self, img_feats, pts, img_metas):
         """Obtain multi-level features for each point.

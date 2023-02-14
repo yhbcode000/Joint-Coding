@@ -5,11 +5,9 @@ from mmcv.ops import DynamicScatter
 from mmcv.runner import force_fp32
 from torch import nn
 
-from .. import builder
-from ..builder import VOXEL_ENCODERS
-from .utils import VFELayer, get_paddings_indicator
-
-
+from mmdet3d.models import builder
+from mmdet3d.models.builder import VOXEL_ENCODERS
+from mmdet3d.models.voxel_encoders.utils import VFELayer, get_paddings_indicator
 @VOXEL_ENCODERS.register_module()
 class HardSimpleVFE(nn.Module):
     """Simple voxel feature encoder used in SECOND.
